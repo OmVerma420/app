@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import Layout from './Layout';
+import Layout from '../layouts/layout.jsx';
 
 export default function ProtectedRoute() {
   const location = useLocation();

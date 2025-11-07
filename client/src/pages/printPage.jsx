@@ -170,6 +170,16 @@ export default function PrintPage() {
           {formatDate(app.createdAt)}
         </td>
       </tr>
+        {/* ✅ NEW ROW — Certificate Status */}
+      <tr className="border border-black">
+        <th className="p-2 font-semibold border border-black">
+          Certificate Status
+        </th>
+        <td className="p-2 border border-black" colSpan={3}>
+          {(app.status || "applied").toUpperCase()}
+        </td>
+      </tr>
+
 
       {/* FULL WIDTH */}
       <tr className="border border-black">

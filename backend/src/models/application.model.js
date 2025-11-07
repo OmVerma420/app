@@ -2,80 +2,24 @@ import mongoose, { Schema } from 'mongoose';
 
 const applicationSchema = new Schema(
   {
-    // Link to the student who is applying
-    student: {
-      type: Schema.Types.ObjectId,
-      ref: 'Student',
-      required: true,
-    },
+    student: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
 
-    // --- NEW FIELDS TO BE FILLED BY STUDENT ---
-    // (These were moved from the Student model)
-    fatherName: {
-      type: String,
-      required: true,
-    },
-    motherName: {
-      type: String,
-      required: true,
-    },
-    course: { // Renamed from 'class' for clarity, but you can use 'class'
-      type: String,
-      required: true,
-    },
-    classRollNo: {
-      type: String,
-      required: true,
-    },
-    session: {
-      type: String,
-      required: true,
-    },
-    examRollNo: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    registrationNo: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    registrationYear: {
-      type: String,
-      required: true,
-    },
-    examType: {
-      type: String,
-      required: true,
-    },
-    resultStatus: {
-      type: String,
-      required: true,
-    },
-    passingYear: {
-      type: String,
-      required: true,
-    },
-    passingDivisionGrade: {
-      type: String,
-      required: true,
-    },
-    boardUnivName: {
-      type: String,
-      required: true,
-    },
-    mobileNumber: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-    },
-    // --- END NEW FIELDS ---
+    fatherName: { type: String, required: true },
+    motherName: { type: String, required: true },
+    course: { type: String, required: true },
+    classRollNo: { type: String, required: true },
+    session: { type: String, required: true },
+    examRollNo: { type: String, required: true, unique: true },
+    registrationNo: { type: String, required: true, unique: true },
+    registrationYear: { type: String, required: true },
+    examType: { type: String, required: true },
+    resultStatus: { type: String, required: true },
+    passingYear: { type: String, required: true },
+    passingDivisionGrade: { type: String, required: true },
+    boardUnivName: { type: String, required: true },
+    mobileNumber: { type: String, required: true },
+    email: { type: String, required: true },
 
-    // Data from Page 3
     address: {
       village: String,
       postOffice: String,
@@ -84,30 +28,35 @@ const applicationSchema = new Schema(
       state: String,
       pinCode: String,
     },
-    marksheetURL: {
+
+    marksheetURL: { type: String, required: true },
+
+    // Payment
+    paymentId: { type: String, default: null },
+    paymentAmount: { type: Number, default: null },
+    paymentMode: { type: String, default: 'Online' },
+    paymentDate: { type: Date, default: null },
+
+    // ✅ Admin workflow fields
+    status: {
       type: String,
-      required: true,
+      enum: ["applied", "approved", "printed"],
+      default: "applied",
+      index: true,
     },
 
-    // Data from Page 4 (Payment)
-    paymentId: {
-      type: String,
+    approvedAt: { type: Date, default: null },
+    printedAt: { type: Date, default: null },
+
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
       default: null,
     },
-    paymentAmount: {
-      type: Number,
-      default: null,
-    },
-    paymentMode: {
-      type: String,
-      default: 'Online',
-    },
-    paymentDate: {
-      type: Date,
-      default: null,
-    },
+
+    notes: { type: String, default: "" },
   },
   { timestamps: true }
-); // 'createdAt' will be our 'Apply Date'
+);
 
-export const Application = mongoose.model('Application', applicationSchema);
+export const Application = mongoose.model("Application", applicationSchema);
