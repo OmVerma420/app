@@ -94,6 +94,14 @@ export default function ApplyFormPage() {
     if (!student) navigate("/login", { replace: true });
   }, [student, navigate]);
 
+  // ✅ Clear previous saved form when student changes
+useEffect(() => {
+  if (student) {
+    localStorage.removeItem(FORM_STORAGE_KEY);
+  }
+}, [student]);
+
+
   // ✅ Restore local data (if not in edit mode)
   useEffect(() => {
     if (editMode) return;
@@ -215,7 +223,6 @@ export default function ApplyFormPage() {
   const personalFields = [
     { name: "fatherName", label: "Father's Name" },
     { name: "motherName", label: "Mother's Name" },
-    { name: "course", label: "Course" },
     { name: "classRollNo", label: "Class Roll No." },
     { name: "session", label: "Session (e.g., 2020–2023)" },
     { name: "examRollNo", label: "Exam Roll No." },
@@ -245,7 +252,7 @@ export default function ApplyFormPage() {
 
       {editMode && (
         <div className="bg-blue-100 border border-blue-400 text-blue-800 p-3 rounded mb-4 text-center">
-          ✏️ You are editing your previously submitted application
+           You are editing your previously submitted application
         </div>
       )}
 
@@ -325,6 +332,30 @@ export default function ApplyFormPage() {
                   readOnly
                   className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Course <span className="text-red-500">*</span>
+                </label>
+                <select
+                  {...methods.register("personalDetail.course")}
+                  className={`w-full px-3 py-2 border rounded-lg shadow-sm ${
+                    errors?.personalDetail?.course
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <option value="">-- Select Course --</option>
+                  <option value="B.A.">B.A.</option>
+                  <option value="B.Sc.">B.Sc.</option>
+                  <option value="I.Sc.">I.Sc.</option>
+                </select>
+
+                {errors?.personalDetail?.course && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.personalDetail.course.message}
+                  </p>
+                )}
               </div>
 
               {personalFields.map((f) => (

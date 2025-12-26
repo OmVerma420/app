@@ -1,75 +1,60 @@
 import express from "express";
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import { ApiError } from './src/utils/ApiError.js';
-
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { ApiError } from "./src/utils/ApiError.js";
 
 const app = express();
 
-app.use(cors({
-    origin: function(origin, callback) {
-        
-        if (!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            process.env.CORS_ORIGIN,
-            'http://localhost:5173',
-            'http://localhost:5174',
-            'https://blogify-pzaq.vercel.app'
-        ];
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true 
-}))
+/* ------------------- ✅ CORS ------------------- */
+app.use(
+  cors({
+    origin: [
+      process.env.CORS_ORIGIN,
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://blogify-pzaq.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
-app.use(express.json())
-app.use(express.urlencoded({extended: true , limit: "5mb"}))
-app.use(express.static("public"))
-app.use(cookieParser()) 
+/* ------------------- ✅ Parsers ------------------- */
+app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(express.static("public"));
+app.use(cookieParser());
 
-
-
+/* ------------------- ✅ Routes ------------------- */
 import routes from "./src/routes/index.routes.js";
-
 app.use("/api/v1", routes);
 
-
-// Global error handler
+/* ------------------- ✅ Global Error Handler ------------------- */
 app.use((err, req, res, next) => {
-    let error = { ...err };
-    error.message = err.message;
+  let error = { ...err };
+  error.message = err.message;
 
-    // Log error
-    console.error(err);
+  console.error("🔥 ERROR:", err);
 
-    // Mongoose bad ObjectId
-    if (err.name === 'CastError') {
-        const message = 'Resource not found';
-        error = new ApiError(404, message);
-    }
+  // Bad ObjectId
+  if (err.name === "CastError") {
+    error = new ApiError(404, "Resource not found");
+  }
 
-    // Mongoose duplicate key
-    if (err.code === 11000) {
-        const message = 'Duplicate field value entered';
-        error = new ApiError(400, message);
-    }
+  // Duplicate key
+  if (err.code === 11000) {
+    error = new ApiError(400, "Duplicate field value entered");
+  }
 
-    // Mongoose validation error
-    if (err.name === 'ValidationError') {
-        const message = Object.values(err.errors).map(val => val.message);
-        error = new ApiError(400, message);
-    }
+  // Validation error
+  if (err.name === "ValidationError") {
+    const message = Object.values(err.errors).map((v) => v.message);
+    error = new ApiError(400, message);
+  }
 
-    res.status(error.statusCode || 500).json({
-        success: false,
-        error: error.message || 'Server Error'
-    });
+  res.status(error.statusCode || 500).json({
+    success: false,
+    error: error.message || "Server Error",
+  });
 });
 
-
-export {app}
+export { app };

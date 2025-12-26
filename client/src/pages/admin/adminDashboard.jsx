@@ -1,65 +1,71 @@
 // src/pages/admin/AdminDashboard.jsx
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getCLCStats } from "@/store/adminAuthSlice";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function AdminDashboard() {
-  const dispatch = useDispatch();
+const AdminDashboard = React.memo(() => {
   const navigate = useNavigate();
 
-  const { stats, status } = useSelector((state) => state.adminAuth);
-
-  useEffect(() => {
-    dispatch(getCLCStats());
-  }, [dispatch]);
-
-  const box = (text, color, path) => (
-    <div
-      onClick={() => path && navigate(path)}
-      className={`cursor-pointer text-white font-semibold text-center py-6 rounded-lg shadow-lg hover:scale-105 transition ${
-        color === "blue"
-          ? "bg-blue-600"
-          : color === "red"
-          ? "bg-red-500"
-          : "bg-yellow-500"
-      }`}
-    >
-      {text}
-    </div>
-  );
+  const ugSem = ["Sem-I", "Sem-II", "Sem-III", "Sem-IV"];
+  const ugPart = ["Part-I", "Part-II", "Part-III"];
+  const interItems = [
+    "Inter 11th Admission",
+    "Inter 11th Registration",
+    "Inter 12th Admission",
+    "Inter 12th Exam Form",
+  ];
 
   return (
-    <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-bold">G.L.M. College</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold mb-6">G.L.M. College</h1>
 
-      {/* SECTION 1 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {box("UG Sem-I", "blue")}
-        {box("UG Sem-II", "blue")}
-        {box("UG Sem-III", "blue")}
-        {box("UG Sem-IV", "blue")}
+      {/* ✅ CLC BOX ROW */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-10">
+        
+
+        {ugSem.map((sem, i) => (
+          <div
+            key={i}
+            onClick={() => navigate("/admin/clc")}
+            className="cursor-pointer flex justify-center items-center h-28 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xl rounded-lg shadow-md"
+          >
+            UG <br /> {sem}
+          </div>
+        ))}
       </div>
 
-      {/* SECTION 2 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {box("UG Part-I", "red")}
-        {box("UG Part-II", "red")}
-        {box("UG Part-III", "red")}
+      {/* ✅ UG PART */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+        {ugPart.map((part, i) => (
+          <div
+            key={i}
+            className="cursor-pointer flex justify-center items-center h-28 bg-red-500 hover:bg-red-600 text-white font-semibold text-xl rounded-lg shadow-md"
+          >
+            UG <br /> {part}
+          </div>
+        ))}
       </div>
 
-      {/* SECTION 3 */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
-        {box("Inter 11th Admission", "yellow")}
-        {box("Inter 11th Registration", "yellow")}
-      </div>
-
-      {/* SECTION 4 */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
-        {box("Inter 12th Admission", "blue")}
-        {/* ✅ CLC Button */}
-        {box("CLC", "blue", "/admin/clc")}
+      {/* ✅ INTER */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+        {interItems.map((item, i) => (
+          <div
+            key={i}
+            className={`cursor-pointer flex justify-center items-center h-28 rounded-lg shadow-md text-black font-semibold text-xl ${
+              i < 4 ? "bg-yellow-400" : "bg-blue-600 text-white"
+            }`}
+          >
+            {item}
+          </div>
+        ))}
+        <div
+          onClick={() => navigate("/admin/clc")}
+          className="cursor-pointer flex justify-center items-center h-28 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xl rounded-lg shadow-md"
+        >
+          CLC
+        </div>
       </div>
     </div>
   );
-}
+});
+
+export default AdminDashboard;

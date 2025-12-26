@@ -1,71 +1,49 @@
-// src/components/admin/AdminHeader.jsx
-import React, { useState } from "react";
+// src/components/admin/AdminHeaderMain.jsx
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { adminLogout } from "@/store/adminAuthSlice";
+import { LogOut } from "lucide-react";
 
-export default function AdminHeader() {
+export default function AdminHeaderMain() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [open, setOpen] = useState(false);
+  const admin = useSelector((s) => s.adminAuth.admin);
 
   return (
-    <header className="bg-blue-900 text-white flex justify-between items-center px-6 py-4 shadow">
+    <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
+      {/* LEFT: TITLE */}
       <h2
-        className="font-bold text-lg cursor-pointer"
+        className="font-bold text-2xl cursor-pointer text-blue-700"
         onClick={() => navigate("/admin/dashboard")}
       >
-        GORELAL MEHTA COLLEGE
+        G.L.M. College
       </h2>
 
-      <nav className="flex items-center gap-6">
-        <button
-          onClick={() => navigate("/admin/dashboard")}
-          className="hover:text-yellow-300"
-        >
-          Dashboard
-        </button>
+      {/* RIGHT — ADMIN SECTION */}
+      <div className="flex items-center gap-6">
+        
+        {/* Admin Name Display */}
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
+            {admin?.name?.charAt(0) ?? "A"}
+          </div>
 
-        {/* CLC MENU */}
-        <div className="relative">
-          <button
-            className="hover:text-yellow-300"
-            onClick={() => setOpen(!open)}
-          >
-            CLC ▼
-          </button>
-
-          {open && (
-            <div className="absolute right-0 bg-white text-black rounded shadow-md w-40">
-              <p
-                onClick={() => navigate("/admin/clc")}
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-              >
-                CLC Dashboard
-              </p>
-              <p
-                onClick={() => navigate("/admin/clc/search")}
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-              >
-                Search CLC
-              </p>
-              <p
-                onClick={() => navigate("/admin/clc/records")}
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-              >
-                Apply Records
-              </p>
-            </div>
-          )}
+          <div className="text-sm">
+            <p className="font-medium">{admin?.name ?? "Administrator"}</p>
+            <p className="text-gray-500 text-xs">{admin?.email ?? ""}</p>
+          </div>
         </div>
 
+        {/* LOGOUT */}
         <button
-          className="bg-red-600 hover:bg-red-800 px-4 py-2 rounded"
+          className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition"
           onClick={() => dispatch(adminLogout())}
         >
-          Logout
+          <LogOut size={18} />
+          <span className="text-sm font-medium">Logout</span>
         </button>
-      </nav>
+      </div>
     </header>
   );
 }

@@ -3,7 +3,9 @@ import { z } from "zod";
 export const personalDetailSchema = z.object({
   fatherName: z.string().min(1, "Father's name is required"),
   motherName: z.string().min(1, "Mother's name is required"),
-  course: z.string().min(1, "Course is required"),
+  course: z.enum(["B.A.", "B.Sc.", "I.Sc."], {
+   required_error: "Course is required",
+  }),
   classRollNo: z.string().min(1, "Class Roll No. is required"),
   session: z.string().min(1, "Session is required"),
   examRollNo: z.string().min(1, "Exam Roll No. is required"),

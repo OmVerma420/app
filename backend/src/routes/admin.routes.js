@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import {
   loginAdmin,
   logoutAdmin,
@@ -9,19 +10,20 @@ import {
   getApplicationById,
   updateApplicationStatus,
 } from "../controllers/admin.controller.js";
+
 import { verifyAdminJWT } from "../middleware/adminAuth.js";
 
 const router = Router();
 
-// Auth
+/* ------------------- ✅ Auth ------------------- */
 router.post("/login", loginAdmin);
 router.post("/logout", verifyAdminJWT, logoutAdmin);
 router.get("/me", verifyAdminJWT, getAdminProfile);
 
-// Dashboard
+/* ------------------- ✅ Dashboard ------------------- */
 router.get("/clc/stats", verifyAdminJWT, getCLCStats);
 
-// Applications
+/* ------------------- ✅ Applications ------------------- */
 router.get("/applications", verifyAdminJWT, listApplications);
 router.get("/applications/search", verifyAdminJWT, searchByReferenceId);
 router.get("/applications/:id", verifyAdminJWT, getApplicationById);

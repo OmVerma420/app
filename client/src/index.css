@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ✅ PRINT ONLY CERTIFICATE */
+@media print {
+
+  /* Hide everything first */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only print-container */
+  #print-container,
+  #print-container * {
+    visibility: visible;
+  }
+
+  #print-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  /* Hide extra UI */
+  nav, header, footer, .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}

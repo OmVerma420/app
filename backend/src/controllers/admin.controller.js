@@ -3,90 +3,157 @@ import { Application } from "../models/application.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
-// --- Auth ---
+/* ======================================================
+ ✅ ADMIN LOGIN
+====================================================== */
 export const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("📌 LOGIN REQUEST:", email, password);
+  console.log("📌 LOGIN REQUEST:", email);
 
   const admin = await Admin.findOne({ email });
 
-  console.log("📌 FOUND ADMIN:", admin);
-
   if (!admin) throw new ApiError(401, "Invalid credentials");
-
 
   const ok = await admin.comparePassword(password);
   if (!ok) throw new ApiError(401, "Invalid credentials");
 
+  // ✅ Create token
   const token = admin.generateAccessToken();
 
-  const options = {
+  // ✅ Cookie config
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    sameSite: "lax",
     path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
   return res
     .status(200)
-    .cookie("adminToken", token, options)
-    .json(new ApiResponse(200, { admin, token }, "Admin logged in"));
+    .cookie("adminToken", token, cookieOptions)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          admin: {
+            _id: admin._id,
+            email: admin.email,
+            name: admin.name,
+            role: admin.role,
+          },
+        },
+        "Admin logged in"
+      )
+    );
 });
 
+/* ======================================================
+ ✅ ADMIN LOGOUT
+====================================================== */
 export const logoutAdmin = asyncHandler(async (req, res) => {
-  const options = {
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    sameSite: "lax",
     path: "/",
   };
+
   return res
     .status(200)
-    .clearCookie("adminToken", options)
+    .clearCookie("adminToken", cookieOptions)
     .json(new ApiResponse(200, {}, "Admin logged out"));
 });
 
+/* ======================================================
+ ✅ GET ADMIN PROFILE (ME)
+====================================================== */
 export const getAdminProfile = asyncHandler(async (req, res) => {
-  return res.status(200).json(new ApiResponse(200, req.admin, "OK"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.admin, "Admin profile"));
 });
 
-// --- Dashboard: counts (applied vs approved) ---
+/* ======================================================
+ ✅ DASHBOARD STATS
+====================================================== */
 export const getCLCStats = asyncHandler(async (req, res) => {
-  const [applied, approved, printed] = await Promise.all([
-    Application.countDocuments({ status: "applied" }),
-    Application.countDocuments({ status: "approved" }),
-    Application.countDocuments({ status: "printed" }),
-  ]);
+  const apps = await Application.find();
+
+  const stats = {
+    baApply: 0,
+    bscApply: 0,
+    iscApply: 0,
+
+    baApprove: 0,
+    bscApprove: 0,
+    iscApprove: 0,
+
+    applied: 0,
+    approved: 0,
+  };
+
+  apps.forEach((app) => {
+    const course = app.course?.trim();
+    const status = app.status;
+
+    // ✅ Applied Count
+    if (status === "applied") {
+      stats.applied++;
+
+      if (course === "B.A.") stats.baApply++;
+      if (course === "B.Sc.") stats.bscApply++;
+      if (course === "I.Sc.") stats.iscApply++;
+    }
+
+    // ✅ Approved Count
+    if (status === "approved") {
+      stats.approved++;
+
+      if (course === "B.A.") stats.baApprove++;
+      if (course === "B.Sc.") stats.bscApprove++;
+      if (course === "I.Sc.") stats.iscApprove++;
+    }
+  });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { applied, approved, printed }, "Stats"));
+    .json(new ApiResponse(200, stats, "Stats fetched"));
 });
 
-// --- List applications with filters ---
+
+
+/* ======================================================
+ ✅ LIST APPLICATIONS
+====================================================== */
 export const listApplications = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 20,
     startDate,
     endDate,
-    status,       // optional: applied/approved/printed
-    q,            // optional keyword (studentName, registrationNo, referenceId)
+    status,
+    q,
   } = req.query;
 
   const where = {};
 
-  if (startDate || endDate) {
-    where.createdAt = {};
-    if (startDate) where.createdAt.$gte = new Date(startDate);
-    if (endDate) where.createdAt.$lte = new Date(endDate);
+  // ✅ FIX DATE RANGE
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    where.createdAt = { $gte: start, $lte: end };
   }
 
   if (status) where.status = status;
 
-  // keyword search across joined student fields and app fields
   const or = [];
   if (q) {
     or.push(
@@ -105,17 +172,30 @@ export const listApplications = asyncHandler(async (req, res) => {
 
   const total = await Application.countDocuments(query);
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { docs, total, page: Number(page), limit: Number(limit) }, "OK"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        docs,
+        total,
+        page: Number(page),
+        limit: Number(limit),
+      },
+      "OK"
+    )
+  );
 });
 
-// --- Search by student referenceId ---
+
+/* ======================================================
+ ✅ SEARCH APPLICATION BY REFERENCE ID
+====================================================== */
 export const searchByReferenceId = asyncHandler(async (req, res) => {
   const { referenceId } = req.query;
   if (!referenceId) throw new ApiError(400, "referenceId is required");
 
   const docs = await Application.find()
+    .select("status fatherName course mobileNumber createdAt")
     .populate({
       path: "student",
       match: { referenceId },
@@ -123,43 +203,100 @@ export const searchByReferenceId = asyncHandler(async (req, res) => {
     })
     .sort({ createdAt: -1 });
 
-  // Filter apps with matched student (since match happens inside populate)
-  const filtered = docs.filter(d => d.student !== null);
+  const filtered = docs.filter((d) => d.student !== null);
 
-  return res.status(200).json(new ApiResponse(200, filtered, "OK"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, filtered, "Search OK"));
 });
 
-// --- Get single application with full details ---
+
+/* ======================================================
+ ✅ GET SINGLE APPLICATION
+====================================================== */
 export const getApplicationById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const doc = await Application.findById(id).populate("student", "referenceId studentName");
+
+  const doc = await Application.findById(id).populate(
+    "student",
+    "referenceId studentName"
+  );
+
   if (!doc) throw new ApiError(404, "Application not found");
-  return res.status(200).json(new ApiResponse(200, doc, "OK"));
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, doc, "OK"));
 });
 
-// --- Update status (approve/printed) + notes ---
+/* ======================================================
+ ✅ UPDATE STATUS + NOTES
+====================================================== */
+/* ======================================================
+ ✅ UPDATE STATUS + NOTES
+====================================================== */
 export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { status, notes } = req.body; // status: applied|approved|printed
+  const { status, notes } = req.body;
 
-  const doc = await Application.findById(id);
+  const doc = await Application.findById(id).populate(
+    "student",
+    "referenceId studentName"
+  );
+
   if (!doc) throw new ApiError(404, "Application not found");
 
-  if (status) {
-    doc.status = status;
-    if (status === "approved") {
+  /* -------------------------------------------------------
+    PRINT REQUEST — SHOULD NOT CHANGE STATUS
+  -------------------------------------------------------- */
+  if (status === "printed") {
+    doc.printedAt = new Date();     // only timestamp
+    await doc.save();
+
+    return res.status(200).json(
+      new ApiResponse(200, {
+        status: doc.status,
+        printedAt: doc.printedAt,
+        approvedAt: doc.approvedAt,
+        approvedBy: doc.approvedBy,
+      }, "Printed timestamp updated")
+    );
+  }
+
+  /* -------------------------------------------------------
+    APPROVE REQUEST — COUNT ONLY FIRST TIME
+  -------------------------------------------------------- */
+  if (status === "approved") {
+    if (doc.status !== "approved") {
+      doc.status = "approved";
       doc.approvedAt = new Date();
       doc.approvedBy = req.admin._id;
     }
-    if (status === "printed") {
-      doc.printedAt = new Date();
-    }
   }
 
+  /* -------------------------------------------------------
+    APPLIED REQUEST
+  -------------------------------------------------------- */
+  if (status === "applied") {
+    doc.status = "applied";
+  }
+
+  /* -------------------------------------------------------
+    NOTES UPDATE
+  -------------------------------------------------------- */
   if (typeof notes === "string") {
     doc.notes = notes;
   }
 
   await doc.save();
-  return res.status(200).json(new ApiResponse(200, doc, "Updated"));
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      status: doc.status,
+      printedAt: doc.printedAt,
+      approvedAt: doc.approvedAt,
+      approvedBy: doc.approvedBy,
+    }, "Status updated")
+  );
 });
+

@@ -3,9 +3,14 @@ import api from "../api/axios";
 
 const initialState = {
   admin: null,
-  status: "idle", // idle | loading | succeeded | failed
+
+  // auth-related
+  status: "idle",   // <- only used for login/session
   error: null,
-  stats: null, // { applied, approved, printed }
+
+  // stats-related
+  stats: null,
+  statsStatus: "idle",
 };
 
 /* ================================
@@ -55,7 +60,7 @@ export const adminLogout = createAsyncThunk(
   }
 );
 
-// ✅ GET CLC STATS
+// ✅ CLC STATS (SEPARATE STATE)
 export const getCLCStats = createAsyncThunk(
   "admin/getCLCStats",
   async (_, { rejectWithValue }) => {
@@ -86,11 +91,12 @@ const adminSlice = createSlice({
       state.status = "idle";
       state.error = null;
       state.stats = null;
+      state.statsStatus = "idle";
     },
   },
   extraReducers: (builder) =>
     builder
-      /* LOGIN */
+      /* ✅ LOGIN */
       .addCase(adminLogin.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -104,7 +110,7 @@ const adminSlice = createSlice({
         state.error = action.payload;
       })
 
-      /* CHECK LOGIN */
+      /* ✅ CHECK ADMIN EXISTS */
       .addCase(checkAdminLoggedIn.pending, (state) => {
         state.status = "loading";
       })
@@ -113,11 +119,11 @@ const adminSlice = createSlice({
         state.admin = action.payload;
       })
       .addCase(checkAdminLoggedIn.rejected, (state) => {
-        state.status = "idle";
+        state.status = "failed";
         state.admin = null;
       })
 
-      /* LOGOUT */
+      /* ✅ LOGOUT */
       .addCase(adminLogout.pending, (state) => {
         state.status = "loading";
       })
@@ -125,21 +131,17 @@ const adminSlice = createSlice({
         state.status = "idle";
         state.admin = null;
       })
-      .addCase(adminLogout.rejected, (state) => {
-        state.status = "idle";
-      })
 
-      /* GET STATS */
+      /* ✅ CLC STATS */
       .addCase(getCLCStats.pending, (state) => {
-        state.status = "loading";
+        state.statsStatus = "loading";
       })
       .addCase(getCLCStats.fulfilled, (state, action) => {
-        state.status = "succeeded";
+        state.statsStatus = "succeeded";
         state.stats = action.payload;
-        state.error = null;
       })
       .addCase(getCLCStats.rejected, (state, action) => {
-        state.status = "failed";
+        state.statsStatus = "failed";
         state.error = action.payload;
       }),
 });
